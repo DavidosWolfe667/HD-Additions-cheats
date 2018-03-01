@@ -1,0 +1,21 @@
+addkeysection "Hideous Destructor: Misc. Fixes" HideousDestructorMF
+
+addmenukey "Equip best first aid" hd_medkit
+addmenukey "Equip stimpack" hd_stim
+addmenukey "Open backpack" hd_backp
+addmenukey "Deploy ladder" hd_ladder
+addmenukey "Turn on/off NVG" hd_nightv
+addmenukey "Merge magazines/range finder" +user3
+
+defaultbind z hd_medkit
+defaultbind x hd_stim
+defaultbind c hd_backp
+defaultbind v hd_ladder
+defaultbind n hd_nightv
+defaultbind mouse5 +user3
+
+alias hd_medkit "use selfbandage;wait 1;use hdmedikitter"
+alias hd_stim "use portablestimpack"
+alias hd_backp "use hdbp"
+alias hd_ladder "use portableladder"
+alias hd_nightv "use portableliteamp"

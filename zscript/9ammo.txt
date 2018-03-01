@@ -1,0 +1,199 @@
+// ------------------------------------------------------------
+// 9mm Ammo
+// ------------------------------------------------------------
+class HDPistolAmmo:Ammo{
+	default{
+		+inventory.ignoreskill
+		+cannotpush
+		+forcexybillboard
+		+rollsprite +rollcenter
+		height 16;radius 8;
+		scale 0.7;
+		inventory.pickupmessage "Picked up a 9mm round.";
+		inventory.maxamount 150;
+		ammo.backpackmaxamount 300;
+		ammo.backpackamount 0;
+	}
+	states{
+	spawn:
+		PBRS A -1 nodelay {hdf.splitammospawn(self);}
+	}
+}
+class HDPistolMag:Ammo{
+	default{
+		+inventory.ignoreskill
+		inventory.maxamount 6;
+		ammo.backpackmaxamount 24;
+		ammo.backpackamount 0;
+		inventory.pickupmessage "Picked up a 9mm magazine.";
+	}
+	states{
+	spawn:
+		CLP3 A 0 nodelay{
+			while(amount>0){
+				amount--;
+				actor pmm=spawn("HD9mPmag",pos);
+				pmm.vel=vel;
+				if(amount)pmm.vel+=(frandom(-1,1),frandom(-1,1),frandom(-1,1));
+				pmm.stamina=15;
+			}
+		}stop;
+	}
+}
+class HDSMGMag:Ammo{
+	default{
+		+inventory.ignoreskill
+		inventory.maxamount 5;
+		ammo.backpackmaxamount 18;
+		ammo.backpackamount 0;
+		inventory.pickupmessage "Picked up a 30-round 9mm magazine.";
+	}
+	states{
+	spawn:
+		CLP3 A 0 nodelay{
+			while(amount>0){
+				amount--;
+				actor smm=spawn("HD9mSMag",pos);
+				smm.stamina=30;
+				smm.vel=vel;
+				if(amount)smm.vel+=(frandom(-1,1),frandom(-1,1),frandom(-1,1));
+			}
+		}stop;
+	}
+}
+
+class HDSpent9mm:HDDebris{
+	override void postbeginplay(){
+		super.postbeginplay();
+		//should we just put this in the weapon itself? but right now they're all the same...
+		A_ChangeVelocity(frandom(-1,1),frandom(-8,-9),frandom(-1,1),CVF_RELATIVE);
+	}
+	default{
+		bouncesound "misc/casing3";scale 0.6;
+	}
+	states{
+	spawn:
+		PBRS A 2{
+			A_SetRoll(roll+45,SPF_INTERPOLATE);
+		}loop;
+	death:
+		PBRS # -1;
+	}
+}
+class HDLoose9mm:HDSpent9mm{
+	override void postbeginplay(){
+		HDDebris.postbeginplay();
+	}
+	default{
+		bouncefactor 0.5;
+	}
+	states{
+	death:
+		TNT1 A 1{
+			actor a=spawn("HDPistolAmmo",self.pos,ALLOW_REPLACE);
+			a.roll=self.roll;a.vel=self.vel;
+		}stop;
+	}
+}
+class HDPistolEmptyMag:HDDebris{
+	default{
+		bouncesound "misc/casing2";scale 0.6;bouncefactor 0.6;scale 1.0;
+	}
+	states{
+	spawn:
+		CLP2 B 2{
+			A_SetRoll(roll+45,SPF_INTERPOLATE);
+		}loop;
+	death:
+		CLP2 B -1{
+			roll=randompick(0,0,0,0,2,2,2,2,1,3)*90;
+		}stop;
+	}
+}
+class HD9mPmag:HDUPK{
+	override void postbeginplay(){
+		super.postbeginplay();
+		if(stamina<1){
+			actor emg=spawn("HDPistolEmptyMag",pos);
+			if(emg)emg.vel=vel;
+			destroy();return;
+		}
+	}
+	states{
+	spawn:
+		CLP2 A -1 A_Stop();
+	give:
+		---- A 0{
+			if(stamina==15){  
+				if(A_JumpIfInTargetInventory("HDPistolMag",0,"null")){
+					setstatelabel("spawn");return;
+				}else{
+					target.A_GiveInventory("HDPistolMag",1);
+					destroy();return;
+				}
+			}else{
+				int al=target.countinv("HDPistolAmmo");
+				target.A_GiveInventory("HDPistolAmmo",stamina);
+				stamina-=target.countinv("HDPistolAmmo")-al;
+				if(stamina<1){destroy();return;}
+				else setstatelabel("spawn");
+			}
+		}stop;
+	}
+}
+class HD9mSmag:HDUPK{
+	override void postbeginplay(){
+		super.postbeginplay();
+		if(stamina<1){
+			actor emg=spawn("HDSMGEmptyMag",pos);
+			if(emg)emg.vel=vel;
+			destroy();return;
+		}
+	}
+	states{
+	spawn:
+		CLP3 A -1 A_Stop();
+	give:
+		---- A 0{
+			if(stamina>=30){  
+				if(A_JumpIfInTargetInventory("HDSMGMag",0,"null")){
+					setstatelabel("spawn");return;
+				}else{
+					target.A_GiveInventory("HDSMGMag",1);
+					destroy();return;
+				}
+			}else{
+				int al=target.countinv("HDPistolAmmo");
+				target.A_GiveInventory("HDPistolAmmo",stamina);
+				stamina-=target.countinv("HDPistolAmmo")-al;
+				if(stamina<1){destroy();return;}
+				else setstatelabel("spawn");
+			}
+		}stop;
+	}
+}
+
+
+
+// ------------------------------------------------------------
+// Pistol Bullet Extras
+// ------------------------------------------------------------
+class HDNineMilNoisemaker:IdleDummy{
+	states{
+	spawn:
+		TNT1 A 1;
+		TNT1 A 0{
+			if(
+				ceilingpic==skyflatnum||
+				ceilingz-floorz>256
+			)A_AlertMonsters(860);
+		}stop;
+	}
+}
+class HDNineMilTrail:IdleDummy{
+	states{
+	spawn:
+		TNT1 A 10 nodelay A_PlaySound("weapons/subfwoosh",0,0.02);
+		stop;
+	}
+}
